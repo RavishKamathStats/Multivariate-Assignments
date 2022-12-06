@@ -1,0 +1,431 @@
+---
+title: "4630 Assignment 1 R Code"
+author: 'Ravish Kamath: 213893664'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{accents}
+- \pagestyle{fancy}
+- \fancyhead[CO,CE]{4630 Assignment 1 R Code}
+- \fancyhead[RO,RE]{Ravish Kamath 213893664}
+---
+
+```{r, eval = TRUE, echo = FALSE}
+df = read.csv('/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Dataset/MATH4630_a1data.csv')
+library(RVAideMemoire)
+```
+```{r, include = FALSE}
+options(tinytex.verbose = TRUE)
+```
+# Question 1
+Let 
+$$
+A =\left(\begin{array}
+{rrr}
+2 & 6 & 0 \\
+1 & 4 & 1  \\
+0 & 1 & 2 \\
+\end{array}\right)
+$$
+
+\noindent (a) For the following questions, you have to clearly show your work. 
+
+  #. Find the eigenvalues and eigenvectors for A. 
+  #. Find the square root of A using Cholesky decomposition. 
+  #. Find the square root of A using spectral decomposition. 
+
+(b). Is A a positive definite matrix? Why or why not? 
+
+(c). Use any software to verify your answers in part (a). 
+
+## Solution
+### Part A
+Please refer to the handwritten solution
+
+### Part B
+Yes A is a positive definite matrix because its' eigenvalues are strictly positive values. Hence, $\lambda_{1} = 2,\lambda_{2} = 3 + \sqrt{3}, \lambda_{3} = 3 - \sqrt{3} > 0$.
+
+### Part C
+```{r}
+A = matrix(c(2,1,0,1,4,1,0,1,2), nrow = 3, 
+           ncol = 3, byrow = TRUE)
+```
+\newpage
+Getting the eigen values and the eigen vectors
+```{r}
+eigen(A)
+```
+Here is the Cholesky Decomposition
+```{r}
+t(chol(A))
+```
+Finally, here is the Spectral Decomposition
+```{r}
+ev = eigen(A)
+L = ev$values
+V = ev$vectors
+D = diag(L)
+sqrtD = sqrt(D)
+sqrtD
+sqrtA = V%*%sqrtD%*%t(V)
+sqrtA
+all.equal(A, zapsmall(sqrtA%*%t(sqrtA)) )
+```
+\newpage
+# Question 2
+Let $A$ be a $(p \times p)$ matrix and is partitioned into
+$$
+A =\left(\begin{array}
+{rr}
+A_{11} & A_{12} \\
+A_{21} & A_{22}  \\
+\end{array}\right)
+$$
+where $A_{11}$ is a $(p_{1} \times p_{1})$ matrix, $A_{22}$ is a $(p_{2} \times p_{2})$ matrix, and $p_1 +p_2 = p$. Similarly, let $B$ be a $(p \times p)$ matrix and is partitioned into
+$$
+A =\left(\begin{array}
+{rr}
+B_{11} & B_{12} \\
+B_{21} & B_{22}  \\
+\end{array}\right)
+$$
+
+where $B_{11}$ is a $(p_1 \times p_1)$ matrix, $B_{22}$ is a $(p_2 \times p_2)$ matrix, and $p_1 +p_2 = p$. Assume
+$A_{11}, A_{22}, B_{11}$, and $B_{22}$ are non singular matrices.
+
+(a) Denote $I_p$ be the $(p \times p)$ identity matrix. Let $AB = I_p$. Express $B_{ij}$ in terms of $A_{ij}$ for all $i,j = 1,2$.
+
+(b) Let $BA = I_p$.Express $B_{ij}$ in terms of $A_{ij}$ for all $i,j = 1,2$.
+
+(c) Show that 
+$$
+|A| = |A_{22}||A_{11}- A_{12}A^{-1}_{22}A_{21}| = |A_{11}||A_{22} - A_{21}A^{-1}_{11}A_{12}|
+$$
+(d) Show that 
+$$
+B_{11} = A_{11}^{-1} + A^{-1}_{11}A_{12}(A_{22} - A_{21}A^{-1}_{11}A_{12})^{-1}A_{21}A^{-1}_{11}
+$$
+and 
+$$
+B_{22} = A^{-1}_{22} + A^{-1}_{22}A_{21}(A_{11} - A_{12}A^{-1}_{22}A_{21})^{-1}A_{12}A^{-1}_{22}
+$$
+
+## Solution
+### Part A
+Please refer to the handwritten notes
+
+### Part B
+Please refer to the handwritten notes
+
+### Part C
+Please refer to the handwritten notes
+
+### Part D 
+Please refer to the handwritten notes
+\newpage
+
+# Question 4
+Consider the following data set:
+
+$$
+ 			\begin{tabular}{c c c c c c c}
+        \hline
+        x1: &3 & 3 & 4 &5 &6 &8\\
+        x2: &17.95 &15.54 &14.00 &12.95 &8.94 &7.49\\
+        \hline
+ 			\end{tabular}
+$$
+For the following questions, you have to clearly show your steps. Computer commanda and
+ print out is not accepted.
+
+(a) Find the sample mean vector.
+
+(b) Find the sample unbiased variance matrix.
+
+(c) Report the squared statistical distances $(x_j - \underaccent{\tilde}{\overline{x}})^{'}S^{-1}(x_j - \underaccent{\tilde}{\overline{x}})$ for $j = 1, ..., 6$.
+
+(d) Assume the data set is from a bi variate normal distribution. 
+
+  #. Describe how you would estimate the 50% probability contour of the population mean vector. 
+  #. At 5% level of significance, is there significant evidence that the population mean vector is different from     $(3,10)^{'}$.     
+
+## Solution
+```{r}
+X = matrix(c(3, 17.95, 3, 15.54, 4, 14, 5, 12.95, 6, 8.94,
+             8, 7.49), nrow = 6, ncol = 2, byrow = TRUE)
+n = 6
+p = 2
+```
+### Part A
+Please refer to the handwritten notes, but here is the optional R code as well.
+
+```{r}
+vec1 = matrix(1, 6, 1)
+xbar = 1/6*t(X)%*%vec1
+xbar
+```
+
+### Part B
+Please refer to the handwritten notes, but here is the optional R code as well.
+
+```{r}
+M = t(X)%*%X
+L = xbar%*%t(xbar)
+N = 6*L
+S = 1/5*(M-N)
+S
+```
+
+
+### Part C
+Please refer to the handwritten notes, but here is the optional R code as well.
+```{r}
+S_inv = solve(S)
+S_inv
+vec1 = matrix(1, 6, 1)
+r = X[,1] - xbar[1,]
+t = X[,2] - xbar[2,]
+centered_mat = cbind(r,t)
+distance = centered_mat%*%S_inv%*%t(centered_mat)
+diag(distance)
+```
+\newpage
+### Part D.1
+```{r}
+plot(xbar[1], xbar[2], type="p", xlim=c(0, 10), 
+     ylim=c(5, 20), xlab="mu1", ylab="mu2")
+
+mu1 = matrix(seq(-5, 20, 0.05), ncol=1, byrow=T)
+nmu1 = nrow(mu1)
+mu2 = matrix(seq(5, 20, 0.05), ncol=1, byrow=T)
+nmu2 = nrow(mu2)
+
+
+for (i in 1:nmu1) {
+  for (j in 1:nmu2) {
+    mu = matrix(c(mu1[i, 1], mu2[j, 1]), ncol=1, byrow=T)
+    Fcomp = c((n-p)/((n-1)*2)*(n*t(xbar-mu)%*%solve(S)%*%(xbar-mu)))
+    Fcrit = qf(0.50, p, n-p)
+    if (Fcomp < Fcrit) points(mu1[i, 1], mu2[j, 1], pch="*")
+  }
+}
+points(xbar[1], xbar[2], col='red')
+```
+
+### Part D.2
+Let 
+$$
+H_{0}: \mu = 
+\left(\begin{array}
+{r}
+ 3  \\
+ 10 \\
+\end{array}\right)
+\qquad
+H_{a}: \mu \neq
+\left(\begin{array}
+{r}
+ 3  \\
+ 10 \\
+\end{array}\right)
+$$
+
+```{r}
+mu0 = matrix(c(3, 10), ncol=1, byrow=T)
+Tobs = n*t(xbar-mu0)%*%S_inv%*%(xbar-mu0)
+Tobs
+
+Fcriticalvalue = (n-1)*p/(n-p)*qf(p = 0.05, df1 = p, df2 = n-p, lower.tail = FALSE)
+Fcriticalvalue
+
+pvalue = 1-pf((n-p)/((n-1)*2)*Tobs, p, n-p)
+pvalue
+```
+As we can see that since our observed Hotelling squared statistic is larger than the critical value, we can say that we will reject $H_0$ and say that there is evidence that the population mean is different from $\mu_{0} = (3,10)^{'}$.
+
+\newpage
+
+# Question 5
+Data are given in the excel file.
+
+(a) Using a graphical method to check if the data of East is a sample from the normal
+distribution. How about data of South, West, and North?
+
+(b) Regardless of your result in part (a), obtain the 95% confidence interval for the mean of \
+  $$(1) North \qquad (2) South \qquad (3) East \qquad (4) West$$ 
+Clearly state the necessary assumptions needed for your 
+
+(c) Considering the data set as a multivariate data set. Use a software and report the sample mean vector, sample covariance matrix and sample correlation matrix.
+
+(d) Use a graphical method to check if the data set is a sample from a multivariate normal distribution.
+
+(e) Obtain the equation for obtaining the 95% confidence region for the population mean vector, $\underaccent{\tilde}{\mu} = (\mu_{N}, \mu_{S}, \mu_{E}, \mu_{W})^{'}$. *(No calculations needed. Just the equations.)* Clearly
+state the necessary assumptions needed for your answer.
+
+(f) At 5% level of significance, test 
+
+$$
+H_{0}: \underaccent{\tilde}{\mu} = (1450, 1900, 1700, 1700)^{'} \quad \text{vs} \quad H_{a}: \underaccent{\tilde}{\mu} \neq (1450, 1900, 1700, 1700)^{'}.
+$$
+
+(g) Based on the your answer in part (f), is $\underaccent{\tilde}{\mu} = (1450, 1900, 1700, 1700)^{'}$ falls within the 95% confidence region of $\underaccent{\tilde}{\mu}$ obtained in part (e)? Why or why not?
+
+## Solution 
+Let it be known that the excel dataset is called df.
+```{r}
+df = data.frame(df)
+X = data.matrix(df)
+n = dim(df)[1]
+p = dim(df)[2]
+```
+
+### Part A
+
+```{r}
+par(mfrow = c(2,2))
+
+qqnorm(df$East, main = 'EAST')
+qqline(df$East)
+
+qqnorm(df$South, main = 'South')
+qqline(df$South)
+
+qqnorm(df$West, main = 'West')
+qqline(df$West)
+
+qqnorm(df$North, main = 'North')
+qqline(df$North)
+```
+
+I would advise that the sample from East is not from a normal distribution, however the rest of the direction variables does appear to be normally distributed based off the above QQ-plots.
+
+### Part B
+Our assumptions are that the data from each direction is normally distributed and the variance is unknown. 
+```{r}
+onemat = matrix(1, n, 1)
+xbar =1/n*t(X)%*%onemat
+xbar
+alpha = 0.05
+degrees.freedom = n - 1
+t.score= qt(p = alpha/2, df = degrees.freedom, lower.tail = F)
+t.score
+```
+
+North C.I.
+```{r}
+sample.sd = sd(df$North)
+sample.se = sample.sd/sqrt(n)
+sample.se
+
+lower_bound = xbar[1] - t.score*sample.se
+upper_bound = xbar[1] + t.score*sample.se
+c(lower_bound, upper_bound)
+```
+Therefore the **C.I.for the mean of North** would be **(1321.866, 1606.034)**.
+
+South C.I.
+```{r}
+sample.sd = sd(df$South)
+sample.se = sample.sd/sqrt(n)
+sample.se
+
+lower_bound = xbar[2] - t.score*sample.se
+upper_bound = xbar[2] + t.score*sample.se
+c(lower_bound, upper_bound)
+```
+Therefore the **C.I. for the mean of South** would be **(1726.799, 2050.401)**.
+
+East C.I.
+```{r}
+sample.sd = sd(df$East)
+sample.se = sample.sd/sqrt(n)
+sample.se
+
+lower_bound = xbar[3] - t.score*sample.se
+upper_bound = xbar[3] + t.score*sample.se
+c(lower_bound, upper_bound)
+```
+Therefore the **C.I. for the mean of East** would be **(1574.315, 1894.484)**.
+
+West C.I.
+```{r}
+sample.sd = sd(df$West)
+sample.se = sample.sd/sqrt(n)
+sample.se
+
+lower_bound = xbar[4] - t.score*sample.se
+upper_bound = xbar[4] + t.score*sample.se
+c(lower_bound, upper_bound)
+```
+Therefore the **C.I. for the mean of West** would be **(1542.455, 1861.445)**.
+
+\newpage
+### Part C
+
+Sample Mean Vector
+```{r}
+xbar =1/n*t(X)%*%onemat
+xbar
+```
+
+Sample Variance-Covariance Matrix
+```{r}
+M = t(X)%*%X
+L = xbar%*%t(xbar)
+N = n*L
+S = 1/(n - 1)*(M-N)
+S
+```
+
+Sample Correlation Matrix
+```{r}
+variances = diag(S)
+D = matrix(diag(variances),ncol=4)
+D_sqrt = sqrt(D)
+D_sqrt_inv = solve(D_sqrt)
+samp_cor = D_sqrt_inv%*%S%*%D_sqrt_inv
+samp_cor
+```
+\newpage
+### Part D
+```{r}
+library(RVAideMemoire)
+mqqnorm(X, main = 'Multi-normal Q-Q plot')
+```
+
+### Part E
+Please check the handwritten notes. Here is the R code for retrieving the $S^{-1}$.
+Our assumptions are that the data is multivariate normally distributed and the variance-covariance matrix is unknown.
+```{r}
+S_inv = solve(S)
+S_inv
+```
+\newpage
+### Part F
+```{r}
+mu0 = matrix(c(1450,1900,1700,1700), ncol=1, byrow=T)
+Tobs = n*t(xbar-mu0)%*%S_inv%*%(xbar-mu0)
+Tobs
+
+Fcriticalvalue = (n-1)*p/(n-p)*qf(p = 0.05, df1 = p, df2 = n-p, lower.tail = FALSE)
+Fcriticalvalue
+
+pvalue = pf((n-p)/((n-1)*p)*Tobs, p, n-p,lower.tail = FALSE)
+pvalue
+```
+
+### Part G
+Based of the R code for Part E, since the p-value is greater than 0.05, we would say that the vector $\underaccent{\tilde}{\mu} = (1450, 1900, 1700, 1700)^{'}$ would fall within the 95% confidence region. Furthermore, we can say that since the Hotelling $T^2$ observed statistic is not greater than the F critical value, we cannot reject $H_0$ and we shall say that there is no evidence to show that population mean vector is different from $\underaccent{\tilde}{\mu} = (1450, 1900, 1700, 1700)^{'}$. 
+
+
+
+
+
+
+
+
+
+
