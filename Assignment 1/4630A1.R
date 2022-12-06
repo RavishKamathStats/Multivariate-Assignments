@@ -93,7 +93,7 @@ pvalue
 
 
 #### Question 5 ####
-df = read.csv('/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Assignment 1/Dataset/MATH4630_a1data.csv')
+df = read.csv(file.choose(), header = T)
 View(df)
 df = data.frame(df)
 X = data.matrix(df)
