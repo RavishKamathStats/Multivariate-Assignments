@@ -1,0 +1,366 @@
+---
+title: "4630 Assignment 2"
+author: 'Ravish Kamath: 213893664'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{accents}
+- \pagestyle{fancy}
+- \fancyhead[CO,CE]{4630 Assignment 2}
+- \fancyhead[RO,RE]{Ravish Kamath 213893664}
+---
+
+```{r, eval = TRUE, echo = FALSE}
+df = read.csv('/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Dataset/A2Q1data.csv', header =  TRUE)
+```
+```{r, include = FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+# Question 1
+Posten (1962) performed an experiment with 2 factors: velocity (2 levels: $V_1$ and $V_2$) and lubricants (three types: $L_1, L_2,$ and $L_3$). The ultimate torque $x_1$ and the ultimate strain $x_2$ of homogeneous pieces of bar steel are measured at each treatment combinations. The data are given below:
+
+```{r, echo=FALSE}
+print(df)
+```
+
+(a) State clearly the model in terms of the overall mean, main effects and interaction effects. This should include all the necessary assumptions and constraints such that we can answer the rest of the questions.
+
+(b) Obtain all the necessary sum of squares.
+
+(c) Is there any evidence that treatment effect exists?
+
+(d) Regardless of the answer in part (c), test for interaction effect and then test for main effect.
+
+\newpage
+
+## Solution
+### Part A
+$$
+\begin{aligned}
+E(X_{lkr}) &= \mu + \tau_l + \beta_k + \gamma_{lk} + \epsilon_{lkr} \\
+             &= \mu + Lubricant_l + Velocity_k + (Lubricant\times Velocity)_{lk} + \epsilon_{lkr}
+\end{aligned}
+$$
+where:
+$$
+\begin{aligned}
+l &= L_1, L_2, L_3 \\
+k &= V_1, V_2 \\
+r &= 1,...,4
+\end{aligned}
+$$
+$\mu$ represents the overall mean of the model. \
+$Lubricant_l$ represents the $L^{th}$ fixed lubricant effect of factor 1 \
+$Velocity_k$ represents the $k^{th}$ fixed velocity effect of factor 2 \
+$(Lubricant \times Velocity)_{lk}$ represents the interaction effect between lubricant and velocity at the $lk^{th}$ level.\
+
+
+Assumptions:
+$\epsilon_{lkr} \stackrel{iid}{\sim} N_2(0,\Sigma)$ and $\sum_{l = L1}^{L3} = \sum_{k = V1}^{V2}\beta_k = \sum_{l = L1}^{L3}\gamma_{lk} = \sum_{k = V1}^{V2}\gamma_{lk} = \underaccent{\tilde}{0}$.
+
+### Part B
+
+Running it through SAS, we get:
+$$
+\hspace{-1.5cm}
+\begin{aligned}
+SSE &= \left[\begin{array}
+{rr}
+3.1532 & -14.9535  \\
+-14.9535 & 535.9725  \\
+\end{array}\right]
+&SSLubricant &= \left[\begin{array}
+{rr}
+1.6927 & -9.6989  \\
+-9.6989 & 56.3233  \\
+\end{array}\right]
+SSVeloctiy = \left[\begin{array}
+{rr}
+0.6240 & 14.8834  \\
+14.8834 & 354.9704  \\
+\end{array}\right]
+\\\\
+SSInteraction &= \left[\begin{array}
+{rr}
+0.0290 & -0.102  \\
+-0.102 & 4.7233  \\
+\end{array}\right]
+&SSTreatment &= SSLubricant + SSVelocity + SSInteraction \\
+             &&&= \left[\begin{array}
+{rr}
+2.3457 & 5.0825  \\
+5.0825 & 416.0170  \\
+\end{array}\right] \\
+SSTotal &= \left[\begin{array}
+{rr}
+5.4989 & -9.8710  \\
+-9.8710 & 951.9895  \\
+\end{array}\right]
+\end{aligned} 
+$$
+
+### Part C
+
+Let $a = 3, b = 2, p = 2, n = 4$.
+```{r}
+SSE = matrix(c(3.1532, -14.9535, -14.9535, 535.9725), nrow = 2, ncol = 2, byrow = T)
+SSLub = matrix(c(1.6927, -9.6989, -9.6989, 56.3233), nrow = 2, ncol = 2, byrow = T)
+SSVel = matrix(c(0.6240, 14.8834, 14.8834, 354.9704), nrow = 2, ncol = 2, byrow = T)
+SSInt = matrix(c(0.0290, -0.102, -0.102, 4.7233), nrow = 2, ncol = 2, byrow = T)
+SStr = SSLub + SSVel + SSInt
+wilkslam = det(SSE)/det(SSE + SStr)
+wilkslam
+a = 3
+b = 2
+p = 2
+n = 4
+#chi-squared observed
+chi_obs = -(a*b*(n-1)- ((p+1) - (a*b - 1))/2)*log(wilkslam)
+chi_obs
+#P-Value
+pchisq(chi_obs, df = 10, lower.tail = F)
+```
+Since it is a really small p-value, implying that based off the data, **there is evidence** that treatment effect exists. \
+\newpage
+
+### Part D
+
+```{r, echo = FALSE, out.width="50%", fig.cap= 'Lubrication Effect', fig.align='center'}
+knitr::include_graphics("/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Assignment 2/SAS/SAS Images/Lubrication Effect.PNG")
+```
+
+Based off SAS, testing for existence of lubricant effect gives us a **0.1082 p-value**. This is a large p-value hence this implies that lubrication effect is **not significant**.
+
+```{r, echo = FALSE, out.width="50%", fig.cap= 'Velocity Effect', fig.align='center'}
+knitr::include_graphics("/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Assignment 2/SAS/SAS Images/Velocity Effect.PNG")
+```
+
+Based of SAS, testing for existence of velocity effect gives **0.0009 p-value**, which is quite small. This implies that velocity effect **is significant**.
+
+\newpage 
+```{r, echo = FALSE, out.width="50%", fig.cap= 'Interaction Effect', fig.align='center'}
+knitr::include_graphics("/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Assignment 2/SAS/SAS Images/Interaction Effect.PNG")
+```
+
+Based of SAS, testing for existence of interaction effect gives **0.9881 p-value**. This is a large value which means that interaction effect is **not significant**.
+
+\newpage
+# Question 2
+Using the data set given in Question 1 and ignoring the velocity factor.
+
+(a) Is there any evidence that lubricant effect exists?
+
+(b) Obtain the 95% confidence ellipsoid for the mean difference between the $L_1$ and $L_3$.
+
+(c) Is there evidence of heterogeneity in variance?
+
+## Solution
+### Part A
+
+```{r}
+n1_indices = which(df$Lubricant == 'L1')
+n1 =  dim(df[n1_indices,])[1]
+n2_indices = which(df$Lubricant == 'L2')
+n2 =  dim(df[n2_indices,])[1]
+n3_indices = which(df$Lubricant == 'L3')
+n3 =  dim(df[n3_indices,])[1]
+grp_obs = c(n1, n2 ,n3)
+n = sum(grp_obs)
+g = nlevels(factor(df$Lubricant))
+p = 2
+
+#Finding the means for each group and overall mean
+L1mean = as.vector(colMeans(df[n1_indices[1]:tail(n1_indices, n = 1),3:4]))
+L2mean = as.vector(colMeans(df[n2_indices[1]:tail(n2_indices, n = 1),3:4]))
+L3mean = as.vector(colMeans(df[n3_indices[1]:tail(n3_indices, n = 1),3:4]))
+lub_group_mean = cbind(L1mean, L2mean, L3mean)
+mean = (n1*L1mean + n2*L2mean + n3*L3mean)/(n1 + n2 + n3)
+
+#Finding the sample covariance for each lubricant
+X1 = as.matrix(df[n1_indices[1]:tail(n1_indices, n = 1),3:4])
+X2 = as.matrix(df[n2_indices[1]:tail(n2_indices, n = 1),3:4])
+X3 = as.matrix(df[n3_indices[1]:tail(n3_indices, n = 1),3:4])
+S1 = 1/(n1 - 1)*(t(X1)%*%X1 - n1*colMeans(X1)%*%t(colMeans(X1)))
+S2 = 1/(n2 - 1)*(t(X2)%*%X2 - n2*colMeans(X2)%*%t(colMeans(X2)))
+S3 = 1/(n3 - 1)*(t(X3)%*%X3 - n3*colMeans(X3)%*%t(colMeans(X3)))
+S = list(S1, S2, S3)
+
+#Calculate the Within Matrix
+W = matrix(0,p,p)
+Wnew = matrix(0,p,p)
+for (i in 1:g){
+  Wnew = as.matrix(lapply(S[i], '*', (grp_obs[i] -1)))
+  Wnew = matrix(unlist(Wnew), ncol = 2, byrow = T)
+  W = W + Wnew
+}
+print(W)
+
+#Calculating the Between Matrix
+B = matrix(0,p,p)
+Bnew = matrix(0,p,p)
+for (i in 1:g){
+  Bnew = grp_obs[i]*(lub_group_mean[,i] - mean)%*%t(lub_group_mean[,i] - mean)
+  B = B + Bnew
+}
+print(B)
+
+#Wilks Lambda and finding p-value
+wilkslam = det(W)/det(W + B)
+wilkslam
+fobs = (n - g - 1)/(g - 1)*((1 - sqrt(wilkslam))/sqrt(wilkslam))
+fobs
+pvalue = pf(fobs, df1 = 2*(g-1),df2 = 2*(n - g - 1), lower.tail = F)
+pvalue
+```
+P-value is **0.07**. If we have our $\alpha = 0.05$, then there is **no evidence** to reject $H_0$. Hence this implies that based on the data, the lubricant effect **does not exist**. 
+
+### Part B
+```{r, fig.show= 'hide'}
+#two sample difference
+tau1_hat = L1mean - mean
+tau2_hat = L2mean - mean
+tau3_hat = L3mean - mean
+tau_vec = matrix(data = c(tau1_hat, tau2_hat, tau3_hat), nco = 3, byrow = F)
+A = c(1, 0, -1)
+tau_hat = tau_vec%*%A
+tau_hat
+
+#Finding the pooled variance for L1 and L3 
+Spooled_L1andL3 = ((n1 - 1)*S1+(n3 - 1)*S3)/(n1 + n3 - 2 )
+
+#Variance for tau_hat
+var_tau_hat = (1/n1 + 1/n3)*Spooled_L1andL3
+var_tau_hat
+
+#95% Ellipsoid
+plot(tau_hat[1], tau_hat[2] , type="p", xlim=c(-2, 2), 
+     ylim=c(-2, 2), xlab="L1mean", ylab="L3mean", 
+     main = '95% C.I. for mean difference between L1 and L3')
+
+tau1 = matrix(seq(-2, 2, 0.05), ncol=1, byrow=T)
+ntau1 = nrow(tau1)
+tau3 = matrix(seq(-2, 2, 0.05), ncol=1, byrow=T)
+ntau3 = nrow(tau3)
+
+for (i in 1:ntau1) {
+  for (j in 1:ntau3) {
+    tau = matrix(c(tau1[i, 1], tau3[j, 1]), ncol=1, byrow=T)
+    Tsq_obs = t((tau_hat - tau))%*%solve(var_tau_hat)%*%(tau_hat-tau)
+    Fcomp = c( ( (n1 + n3 - 2) - p + 1)/((n1 + n3 - 2)*p )* Tsq_obs)
+    Fcrit = qf(0.05, p, n1 + n3 - p - 1)
+    if (Fcomp < Fcrit) points(tau1[i, 1], tau3[j, 1], pch="*")
+  }
+}
+points(tau_hat[1], tau_hat[2], col='red')
+```
+```{r, echo = FALSE, out.width="70%", fig.cap = '95 percent Ellipsoid', fig.align= "center"}
+knitr::include_graphics("//Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Assignment 2/R/R Images/95 percent plot updated 2.png")
+```
+\newpage
+
+### Part C
+```{r}
+#Taking the determinants of the sample co variances
+detS1 = det(S1)
+detS2 = det(S2)
+detS3 = det(S3)
+detS = c(detS1, detS2, detS3)
+
+#Finding the Spooled and its determinant
+Spooled = W/(n1 + n2 + n3 - g)
+detSpooled = det(Spooled)
+detSpooled
+
+#Doing the Box Test for equality of co variances
+grp_obs = c(n1, n2 ,n3)
+lambda = rep(1,1)
+lambda_new = rep(0,1)
+for (i in 1:g){
+  lambda_new = (detS[i]/detSpooled)^((grp_obs[i]-1)/2)
+  lambda = lambda*lambda_new
+}
+print(lambda)
+
+M = -2*log(lambda)
+M
+u = (sum(1/(grp_obs - 1)) - 1/(sum(grp_obs - 1)))*((2*p^2+3*p-1)/(6*(p+1)*(g-1)))
+u
+C = (1 - u)*M
+pchisq(C, df = ((1+p)*p*(g-1))/2, lower.tail = F)
+```
+Since the p-value is large, then this implies that based off the data, there is **no evidence** of heterogeneity in the variance.
+\newpage
+
+# Question 3
+
+To compare two types of coating for resistance to corrosion, 15 pieces of pipe were coated with each type of coating. Two pipes, one with each type of coating, were buried together and left for the same length of time at 14 loactions. Corrosion for the coating was measured by two variables:
+
+|       $x_1$ = maximum depth of pit in thousandiths of an inch
+|       $x_2$ = number of pits
+
+The data are:
+
+```{r, eval = TRUE, echo = FALSE}
+df = read.csv('/Users/ravishkamath/Desktop/University/2. York Math/1 MATH/1. Statistics /MATH 4630/3. Assessments/Assignments/Multivariate Assignments/Dataset/A2Q3data.csv', header = T)
+print(df)
+```
+
+Do the two coatings differ significantly in their effect on corrosion? Clearly state the needed assumptions for your analysis. 
+
+## Solution
+**Assumptions:**
+
+(1) $X_{l,1}, ..., X_{l,15}$ is a random sample size from a population with $\mu_l$, where $l = Coating_1, Coating_2$. The random samples from different populations and independent. 
+
+(2) All population have a common variance matrix $\Sigma$.
+
+(3) Each population is multivariate normal.
+
+Furthermore, let $H_0: \mu_1 = \mu_2$ and $H_a: \mu_1 \neq \mu_2$
+
+```{r}
+n1_indices = which(df$Coating == 1)
+n1 =  dim(df[n1_indices,])[1]
+n2_indices = which(df$Coating == 2)
+n2 =  dim(df[n2_indices,])[1]
+grp_obs = c(n1, n2)
+n = grp_obs[1]
+p = 2
+g = nlevels(factor(df$Coating))
+
+#Difference of Mean
+C1 = df[n1_indices, 2:3]
+C2 = df[n2_indices, 2:3]
+d = C1 - C2
+d_bar = colMeans(d)
+d_bar
+
+# sample Variance covariance matrix
+S = cov(d)
+S
+
+HotellingT = n*t(d_bar)%*%solve(S)%*%d_bar
+HotellingT
+F_Obs = (n-p)/((n-1)*p)*HotellingT
+F_Obs
+pvalue = pf(F_Obs, df1 = p, df2 = 15 - p, lower.tail = F)
+pvalue
+```
+Since p-value is small, we can reject $H_0$, which implies that based off the data, the two coating **do differ significantly** in their effect on corrosion. 
+
+
+\newpage
+
+# Question 4
+Let $\underaccent{\tilde}{x}_1,...,\underaccent{\tilde}{x}_n$ be a sample from $N_2(\underaccent{\tilde}{\mu}, \Sigma)$ where $\Sigma$ is a diagonal matrix with $\sigma_1^2$ and $\sigma_2^2$ be the diagonal entries. Derive the likelihood ratio statistics for testing $H_0: \sigma_1^2 = \sigma_2^2 = \sigma^2$.
+
+## Solution
+
+
+
+
+
