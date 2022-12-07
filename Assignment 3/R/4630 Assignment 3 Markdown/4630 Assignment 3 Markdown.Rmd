@@ -1,0 +1,667 @@
+---
+title: "4630 Assignment 3"
+author: 'Ravish Kamath: 213893664'
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+always_allow_html: true
+output:
+  pdf_document: default
+
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{accents}
+- \pagestyle{fancy}
+- \fancyhead[CO,CE]{4630 Assignment 3}
+- \fancyhead[RO,RE]{Ravish Kamath 213893664}
+---
+
+```{r, eval = TRUE, echo = FALSE, include = "FALSE"}
+library(here)
+df = here("Dataset/MATH4630_a3data.xlsx")
+library(xlsx2dfs)
+q1df = read.xlsx(df, sheet = 1)
+q2df = read.xlsx(df, sheet = 2)
+q3df = q2df
+q5df = read.xlsx(df, sheet = 3)
+q5df = q5df[,-1]
+```
+
+```{r, include = FALSE}
+options(tinytex.verbose = TRUE)
+```
+# Functions Created
+Here are some functions I have created to save time when completing questions. 
+```{r}
+xbar = function(matrix){
+  n = dim(matrix)[1]
+  onevec = rep(1,n)
+  xbar = 1/n*t(matrix)%*%onevec
+  return(xbar)
+}
+
+Spool = function(dat){
+  #Getting the n lengths and parameters
+  nbar = rep(0,length(dat)) 
+  for (i in 1: length(dat)){
+    nbar[i] = dim(dat[[i]])[1]
+  }
+  n = sum(nbar)
+  params = dim(dat[[1]])[2]
+  g = length(dat)
+  #Getting the variance matrices
+  S = list()
+  for (i in 1:g){
+    S = append(S,list(var(dat[[i]])))
+  }
+  #Calculating the Within Matrix
+  W = matrix(0,params,params)
+  Wnew = matrix(0,params,params)
+  for (i in 1:g){
+    Wnew = as.matrix(lapply(S[i], '*', (nbar[i] -1)))
+    Wnew = matrix(unlist(Wnew), ncol = params, byrow = T)
+    W = W + Wnew
+  }
+  #s_pooled
+  result = W/(n - g)
+  return(result)
+}
+spectral = function(matrix){
+  eig = eigen(matrix)
+  D   = diag(eig$values)
+  P   = eig$vectors
+  matsqrt = P%*%sqrt(D)%*%t(P)
+  output = list(D, P, matsqrt)
+  names(output) = c('D', 'P', 'SqrtMat')
+  return(output)
+}
+```
+
+\newpage 
+# Question 1
+Consider the data given in the EXCEL file tab “q1”.
+
+(a) State the multivariable linear regression model with all the necessary assumptions.
+
+(b) Find the predicted model.
+
+(c) Test the significance of the model.
+
+(d) Regarless of your result in part (c), test if $X_1$ is significant? How about $X_2$?
+
+(e) Find a 95% woking Hotelling confidence region for the mean response when $X_1 = 192$ and $X_2 = 152$.
+
+(f) Find a 95% woking Hotelling prediction region for a new response when $X_1 = 192$ and $X_2 = 152$.
+
+## Solution
+
+### Part A
+$\underaccent{\tilde}Y = X\underaccent{\tilde}\beta + \underaccent{\tilde}\epsilon$
+
+where $\underaccent{\tilde}Y = [Y_{(1)},Y_{(2)}]$, $X = [\underaccent{\tilde}1, X_{(1)}, X_{(2)}]$, $\underaccent{\tilde}\beta = [\beta_{(0)}, \beta_{(1)}, \beta_{(2)}]$ and $\underaccent{\tilde}\epsilon = [\epsilon_{(1)}, \epsilon_{(2)}]$
+
+Assumptions:
+$E(\underaccent{\tilde}\epsilon_{(i)}) = \underaccent{\tilde}0$
+$V(\underaccent{\tilde}\epsilon_{(i)}) = \sigma_{ii}I$
+$cov(\underaccent{\tilde}\epsilon_{(i)}, \underaccent{\tilde}\epsilon_{(j)}) = \sigma_{ij}I$
+
+### Part B
+For this section we will show both ways of getting the predicted model. One will be through the actual LS method, and the other will be using the lm function built in R. 
+
+Least Squares Method
+
+```{r}
+Y = as.matrix(q1df[,1:2])
+X = as.matrix(q1df[,3:4])
+onevec = rep(1, dim(X)[1])
+Xnew = cbind(onevec,X)
+beta_coef = solve(crossprod(Xnew))%*%crossprod(Xnew, Y)
+beta_coef
+```
+\newpage 
+
+Using the built in function in R
+
+```{r}
+fit = lm(cbind(y1, y2) ~ x1 + x2, data = q1df)
+summary(fit)
+```
+
+\newpage 
+
+### Part C
+We have our null hypothesis to be $H_0: X_1 = X_2 = 0$. Let $\hat e = Y - \hat Y$ and $\hat \Sigma = n^{-1} \hat e^T \hat e$. Below is the calculation for or sample variance. 
+
+```{r}
+Yhat = Xnew%*%beta_coef
+ehat = Y - Yhat
+n = dim(X)[1]
+Sigmahat = 1/n*t(ehat)%*%ehat
+Sigmahat
+```
+
+
+Now to calculate our test statistic (which will be using the Wilks Lambda), we need too solve for SSE and SST. We have shown the calculation below. Recall that $SSE = n\hat \Sigma$ and $SST = (Y - \hat Y)^T(Y - \hat Y)$. Below are the given outputs for SSE and SST. 
+
+```{r}
+SSE = n*Sigmahat
+SSE
+
+ybar = colMeans(Y)
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X)
+q = 1
+
+Ybar = matrix(ybar, n ,m, byrow = T)
+SST = crossprod(Y - Ybar)
+SST
+```
+
+
+We now finally calculate the Wilks Lambda and complete the Bartlett method. Let it be shown that Wilks Lambda ($\Lambda$) is $\Lambda = \frac{|SSE|}{|SST|}$. Furthermore the formula for the Bartlett test statistic is as follows:
+$$
+-(n-r-1-\frac{1}{2}(m -r + q +1)) \log(\Lambda) \sim \chi^2_{m(r-q)}
+$$
+
+The output is shown below. 
+
+```{r}
+WilksLam = det(SSE)/det(SST)
+
+Bartlett = -(n - r - 1 - 1/2*(m - r + q + 1))*log(WilksLam)
+df = m*(r-q)
+1 - pchisq(Bartlett, df)
+```
+
+Thus we get the Barlett observed value to be **22.32338** with the p-value being, **1.420822e-05**. Based of the very small p-value, we will **reject the null hypothesis**. This implies that there is evidence that the **model would be signficant**. 
+
+\newpage 
+
+### Part D
+Let $H_0: X_2 = 0$
+
+Same procedure as part (c), we have our $\Lambda$ statistic to be **0.8552134**, which when used through Bartlett's method, we get our test statistic to be 3.284489, with a p-value of **0.1935451**. Based of the **large** p-value, we cannot reject $H_0$. This implies that $X_2$ is **not significant**. Below is the output code. 
+
+```{r}
+#Testing if Beta(2) is significant
+#H_0: Beta(2)  or X2 = 0
+X1 = Xnew[,1:2]
+Betahat1 = solve(crossprod(X1))%*%crossprod(X1,Y)
+Sigmahat1 = 1/n*crossprod(Y - X1%*%Betahat1)
+E = n*Sigmahat
+H = n*(Sigmahat1 - Sigmahat)
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X1)
+q = 1
+
+WilksLam = det(E)/det(E + H)
+Bartlett = -(n - r - 1 - 1/2*(m - r + q + 1))*log(WilksLam)
+df = m*(r-q)
+1 - pchisq(Bartlett, df)
+```
+Let $H_0: X_1 = 0$
+
+Same procedure as part (c), we have our $\Lambda$ statistic to be **0.8787331**, which when used through Bartlett's method, we get our test statistic to be 3.284489, with a p-value of **0.2573347**. Based of the **large** p-value, we cannot reject $H_0$. This implies that $X_1$ is **not significant**. Below is the output code. 
+
+
+```{r}
+#Testing if Beta(1) is significant
+#H_0: Beta(1)  or X1 = 0
+X2 = cbind(Xnew[,1], Xnew[,3])
+Betahat2 = solve(crossprod(X2))%*%crossprod(X2,Y)
+Sigmahat2 = 1/n*crossprod(Y - X2%*%Betahat2)
+E = n*Sigmahat
+H = n*(Sigmahat2 - Sigmahat)
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X2)
+q = 1
+
+WilksLam = det(E)/det(E + H)
+Bartlett = -(n - r - 1 - 1/2*(m - r + q + 1))*log(WilksLam)
+df = m*(r-q)
+1 - pchisq(Bartlett, df)
+```
+\newpage
+
+### Part E
+The formula for a $100(1-\alpha)\%$ Confidence Region is as follow:
+$$
+\underaccent{\tilde}x_0^T \hat\beta_{(i)} \pm \sqrt{ \big[ \frac{(m(n-r-1))}{n-r-m}\big] F_{m,n-r-m,\alpha}}\sqrt{\underaccent{\tilde}x_0 (X^TX)^{-1}\underaccent{\tilde}x_0 \hat \Sigma_{ii}}
+$$
+
+Let $\underaccent{\tilde}x_0 = [192, 152]^T$. Let us now compute $\underaccent{\tilde}x_0$ into the formula, given above. 
+```{r}
+newobs = data.frame(x1 = 192, x2 = 152)
+pred = predict(fit, newobs)
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X)
+table = sqrt( ((m*(n-r-1))/(n-r-m))*qf(0.95, df1 = m, df2 = n-r-m) )
+x0 = c(1,192, 152)
+sd1 = sqrt(t(x0)%*%solve(crossprod(Xnew))%*%x0*Sigmahat[1,1])
+sd2 = sqrt(t(x0)%*%solve(crossprod(Xnew))%*%x0*Sigmahat[2,2])
+sd = c(sd1, sd2)
+CR_L = pred - table*sd
+CR_U = pred + table*sd
+CR = cbind(t(CR_L), t(CR_U))
+colnames(CR) = c("Lower", "Upper")
+CR
+```
+Hence our Confidence Region will be: 
+
+$$
+\left[\begin{array}
+{r}
+ 140.0746  \\
+ 154.4173 \\
+\end{array}\right]
+\pm 2.695139
+\left[\begin{array}
+{r}
+ 1.718209  \\
+ 1.374688 \\
+\end{array}\right]
+$$
+
+\newpage
+
+### Part F
+Very similar to our C.R. formula from part (e), our Hotelling Prediction Region is as follows:
+
+$$
+\underaccent{\tilde}x_0^T \hat\beta_{(i)} \pm \sqrt{ \big[ \frac{(m(n-r-1))}{n-r-m}\big] F_{m,n-r-m,\alpha}}\sqrt{(1 + \underaccent{\tilde}x_0 (X^TX)^{-1}\underaccent{\tilde}x_0) \hat \Sigma_{ii}}
+$$
+Let us now use R,to calculate the P.R.
+```{r}
+sd1 = sqrt( (1 + t(x0)%*%solve(crossprod(Xnew))%*%x0)*Sigmahat[1,1] )
+sd2 = sqrt( (1 + t(x0)%*%solve(crossprod(Xnew))%*%x0)*Sigmahat[2,2] )
+sd = c(sd1, sd2)
+PR_L = pred - table*sd
+PR_U = pred + table*sd
+PR = cbind(t(PR_L), t(PR_U))
+colnames(PR) = c("Lower", "Upper")
+PR
+```
+Hence our Prediction Region will be:
+$$
+\left[\begin{array}
+{r}
+ 140.0746  \\
+ 154.4173 \\
+\end{array}\right]
+\pm 2.695139
+\left[\begin{array}
+{r}
+ 6.3931987  \\
+ 5.115 \\
+\end{array}\right]
+$$
+
+\newpage 
+
+# Question 2
+Timm (1975) reported the results of an experiment in which subjects’ respond time to “probe words” at five position ($Y_1$ is at the beginning of the sentence, $Y_2$ is in the first quartile of the sentence, $Y_3$ is in the middle of the sentence, $Y_4$ is in the third quartile of the sentence, and $Y_5$ is at end of the sentence). The data are recorded in the EXCEL file tab “q2”.
+
+(a) Use the sample variance and obtain all the principle components.
+
+(b) Timm specifically required the reduction in dimension should cover at least 90% of the total variance. How many principle components are needed? Why?
+
+(c) Repeat parts (a) and (b) using the sample correlation matrix.
+
+
+## Solution
+
+### Part A
+
+In this part, we will try to hard code the principal components, using the sample variance. Note that we could also use the prcomp function that is usually used to calculate P.C. First we need to calculate the sample variance. The output of the sample variance is calculated below.
+
+```{r}
+X = data.matrix(q2df)
+n = dim(X)[1]
+params = dim(X)[2]
+onevec = rep(1, n)
+#Mean Vector
+xbar = 1/n*t(X)%*%onevec
+#Variance Matrix
+S = 1/(n - 1)*(t(X)%*%X - n*xbar%*%t(xbar))
+S
+```
+
+Now we get the eigen value and eigen vectors. The eigen vectors will represent the Principal Components
+```{r}
+#Getting the eigenvalues and vectors
+eig = eigen(S)
+eig$vectors
+```
+Hence our Principal Components will be as follow:
+$$
+\begin{aligned}
+Y_1 &= -0.4728X_1 - 0.3918X_2 - 0.4875X_3 - 0.4677X_4 - 0.4080X_5 \\
+Y_2 &=  0.5763X_1 + 0.1082X_2 - 0.0960X_3 + 0.1206X_4 - 0.7952X_5 \\
+Y_3 &=  0.4168X_1 - 0.4524X_2 + 0.4794X_3 - 0.6195X_4 + 0.0887X_5 \\
+Y_4 &=  0.2286X_1 + 0.6558X_2 - 0.3690X_3 - 0.5803X_4 + 0.2115X_5 \\
+Y_5 &=  0.4672X_1 - 0.4472X_2 - 0.6222X_3 + 0.2146X_4 + 0.3854X_5 
+\end{aligned}
+$$
+\newpage
+
+### Part B
+```{r}
+result = prcomp(X, scale = F)
+var_exp = result$sdev^2/sum(result$sdev^2)
+plot(var_exp, type = 'b', col = 'green', yaxt = 'n', ylab = '', xlab = '')
+par(new = T)
+plot(cumsum(var_exp), xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained",
+     main = "Scree Plot Using Covariance Matrix",
+     ylim = c(0, 1), type = "b", col = 'blue')
+legend(4.2, 0.4, legend=c("Proportion", "Cumulative"),
+       col=c("green", "blue"), lty=1:1, cex=0.8)
+```
+
+I would say that using the first 3 P.C. would be needed to cover 90% of the total variance. When comparing P.C. 3 and P.C. 4 we oly get an extra 5% of explained variance. 
+
+\newpage 
+
+### Part C
+Same procedure for part (a), we first need to find the correlation matrix. 
+
+```{r}
+sd = sqrt(diag(diag(S),5))
+invsd = solve(sd)
+cor = invsd%*%S%*%t(invsd)
+cor
+```
+
+Now let us compute the P.C for the correlation matrix. But before we do that, when using the correlation matrix for PCA, we need to standardize our independent variables. Let $Z_i = \frac{(X_i - \mu_i)}{\sqrt{\sigma_{ii}}}$ for $i = 1,...,5$.
+
+```{r}
+result = prcomp(scale(X), scale = F )
+print(result)
+```
+Hence our principal components are as follows:
+$$
+\begin{aligned}
+Y_1 &= -0.4418Z_1 - 0.4536Z_2 - 0.47288Z_3 - 0.4536Z_4 - 0.4120Z_5 \\
+Y_2 &=  0.2006Z_1 - 0.4281Z_2 - 0.3679Z_3 + 0.3935Z_4 - 0.6974Z_5 \\
+Y_3 &=  0.6786Z_1 - 0.3491Z_2 + 0.3754Z_3 - 0.3345Z_4 - 0.4059Z_5 \\
+Y_4 &=  0.2125Z_1 + 0.6055Z_2 - 0.2581Z_3 - 0.7010Z_4 + 0.1735Z_5 \\
+Y_5 &=  0.5088Z_1 - 0.3410Z_2 - 0.6584Z_3 + 0.1900Z_4 + 0.3860Z_5
+\end{aligned}
+$$
+
+\newpage
+
+# Question 3
+Use the data in the EXCEL file tab “q2”.
+
+(a) Find the canonical correlation between $(x_1, x_2, x_3)$ and $(x_4, x_5)$.
+
+(b) Test the significance canonical correlations.
+
+(c) Regardless of your answer in part (b), is each canonical correlation individually significant?
+
+## Solution
+```{r}
+X = data.matrix(q3df)
+col_order = c('x4', 'x5', 'x1', 'x2', 'x3')
+X = X[,col_order]
+```
+### Part A
+We first need to get the correlation matrix in order to calculate the canonical correlations. 
+
+```{r}
+cor(X)
+```
+
+Now let $X^{(1)} = (\underaccent{\tilde}X_4, \underaccent{\tilde}X_5)$ and $X^{(2)} = (\underaccent{\tilde}X_1, \underaccent{\tilde}X_2, \underaccent{\tilde}X_3)$
+
+Furthermore, let the following $\Sigma$ matrices be subsections of our correlation matrix. 
+
+$$
+\hspace{-1.5cm}
+\begin{aligned}
+\Sigma_{11} &= \left[\begin{array}
+{rr}
+1 &  0.5239 \\
+0.5239 & 1  \\
+\end{array}\right]
+&\Sigma_{12} &= \left[\begin{array}
+{ccc}
+0.5751 & 0.7498 & 0.6053  \\
+0.4131 & 0.5477 & 0.6919  \\
+\end{array}\right]
+\\\\
+\Sigma_{21} &= \Sigma_{12} 
+&\Sigma_{12} &= \left[\begin{array}
+{ccc}
+1 & 0.6144 & 0.7572  \\
+0.6144 & 1 & 0.5474  \\
+0.7572 & 0.5474 & 1
+\end{array}\right]
+\end{aligned} 
+$$
+
+Let $A = \Sigma_{11}^{-\frac{1}{2}} \Sigma_{22}^{-1} \Sigma_{21}  \Sigma_{11}^{-\frac{1}{2}}$. Let us use R to calculate 
+$\Sigma_{11}^{-\frac{1}{2}}$ and $\Sigma_{22}^{-1}$. 
+
+\newpage 
+
+```{r}
+cor11 = matrix(c(1.0000000, 0.5238876,
+                  0.5238876, 1.0000000),
+                ncol = 2, byrow = T)
+cor11_sqrt = spectral(cor11)
+cor11_invsqrt = solve(cor11_sqrt$SqrtMat)
+cor12 = matrix(c(0.5750730, 0.7497770, 0.6052716,
+                  0.4130573, 0.5476595, 0.6918927),
+                ncol = 3, byrow = T)
+cor21 = t(cor12)
+cor22 = matrix(c(1.0000000, 0.6143902, 0.7571850,
+                  0.6143902, 1.0000000, 0.5473897,
+                  0.7571850, 0.5473897, 1.0000000),
+                ncol = 3, byrow = T)
+cor22_inv = solve(cor22)
+```
+Now we can finally calculate our A matrix. This is shown below. 
+
+```{r}
+A = cor11_invsqrt%*%cor12%*%cor22_inv%*%cor21%*%cor11_invsqrt
+A
+```
+
+To find the canonical correlation, we now need to compute the eigen values of the A matrix. Using R once again we come with the following output. 
+
+```{r}
+canon_cor = sqrt((eigen(A)$values))
+canon_cor
+```
+
+By taking the square root of the eigen values of the matrix A, we get the following canonical correlations:
+
+$$
+p^*_1 = 0.8587396 \qquad p^*_2 = 0.4125933
+$$
+\newpage 
+
+### Part B
+Let our null hypothesis be: $H_0: p^*_1 = p^*_2 = \Sigma_{12} = 0$. We will be using what Bartlett suggests:
+$$
+-[n - 1 - \frac{1}{2}(p+q+1)] \log \Big(\prod_{i = 1}^{p} (1 -  (\hat p^*_i)^2)\Big) > \chi^2_{pq}(\alpha)
+$$
+Let $p \leq q$ which will be the number of variables in each group. Hence, $p = 2$ and $q = 3$. Using the test statistic formula from above we get the p-value to be 0.09923, which is quite high. Hence we cannot reject our null hypothesis. This implies that our canonical correlations are not significant. Below is the R code to provide the evidence for our statement.
+
+```{r}
+n = dim(X)[1]
+p = min(3,2)
+q = max(3,2)
+Bartlett = -(n - 1 - 1/2*(p + q + 1))*log(prod((1-canon_cor^2)))
+Bartlett
+df = p*q
+1-pchisq(Bartlett, df)
+```
+### Part C
+Let $H^{(1)}: p^*_1 \neq 0$, $p^*_2 = 0$. Hence our alternative hypothesis will be $H^{(1)}_a: p^*_2 \neq 0$.
+
+The Bartlett formula to find the test statistic is as follows:
+
+$$
+-[n - 1 - \frac{1}{2}(p+q+1)] \log  (1 - \ (\hat p^*_2)^2) > \chi^2_{(p-1)(q-1)}(\alpha)
+$$
+
+Using the above test statistic, our Bartlett observed value is **1.306275** with a p-value of **0.5204105**.Due to the large p-value we **fail to reject our null hypothesis**. Hence we have do not have evidence that $p^*_2$ is significant. Below is the R code for this problem.
+
+```{r}
+#Testing p_2 not equal to  0 
+Bartlett = -(n - 1 - 1/2*(p + q + 1))*log((1-canon_cor[2]^2))
+Bartlett
+df = (p - 1)*(q-1)
+1-pchisq(Bartlett, df)
+```
+\newpage
+
+Let $H^{(2)}: p^*_2 \neq 0$, $p^*_1 = 0$. Hence our alternative hypothesis will be $H^{(2)}_a: p^*_1 \neq 0$. Essentially we are using the same Bartlett formula except we replace $p^*_2$, with $p^*_1$.
+
+Using the above test statistic, our Bartlett observed value is **9.360764** with a p-value of **0.009275471**.Due to the very small p-value we **reject our null hypothesis**. Hence we have evidence that $p^*_1$ is significant. Below is the R code for this problem.
+
+```{r}
+#Testing p_1 not equal to 0
+Bartlett = -(n - 1 - 1/2*(p + q + 1))*log((1-canon_cor[1]^2))
+Bartlett
+df = (p - 1)*(q - 1)
+1-pchisq(Bartlett, df)
+```
+
+\newpage
+
+# Question 4
+
+(a) Show that
+
+$$
+-\frac{1}{2}(\underaccent{\tilde} x - \underaccent{\tilde} \mu_1)^{'} \Sigma^{-1} (\underaccent{\tilde} x - \underaccent{\tilde} \mu_1) + \frac{1}{2} (\underaccent{\tilde} x - \underaccent{\tilde} \mu_2)^{'} \Sigma^{-1} (\underaccent{\tilde} x - \underaccent{\tilde} \mu_2) = (\underaccent{\tilde} \mu_1 - \underaccent{\tilde} \mu_2)^{'} \Sigma^{-1} \underaccent{\tilde} x - \frac{1}{2}(\underaccent{\tilde} \mu_1 - \underaccent{\tilde} \mu_2)^{'}(\underaccent{\tilde} \mu_1 + \underaccent{\tilde} \mu_2) 
+$$
+(b) Let 
+
+$$
+\begin{aligned}
+f_1(x) &= (1 - |x|) \quad &\text{for} \quad &|x| \leq 1 \\
+f_2(x) &= (1 - |x - 0.5|) \quad &\text{for} \quad &-0.5 \leq x \leq 1 \\
+\end{aligned}
+$$
+
+## Solution
+
+### Part A
+
+Handwritten notes.
+
+### Part B.1
+```{r, echo = FALSE}
+curve(expr = (1 - abs(x)), from = -1, to = 1, col = 'green', xlim = c(-1, 2),
+      main = "Probability Density Function Graph",
+      ylab = 'Density',
+      xlab = 'Values of x',
+      lty = 1)
+curve(expr = 1 - abs(x - 1/2), from = -0.5, to = 1.5, col = 'blue', add = TRUE,
+      lty = 1)
+
+legend("bottomright", legend=c("(1 - |x|)","(1 - |x - 0.5|)"),
+       col=c("green", "blue"), lty = 1,
+       title="Line types", text.font=4, bg='white', cex = 0.7)
+```
+
+### Part B.2 
+Handwritten notes.
+
+### Part B.3 
+Handwritten notes.
+
+
+\newpage
+
+# Question 5
+Use the data in the EXCEL file tab “q5”. Assume the data is a sample from two multivariate normal distributions.
+
+(a) Identify the classification rule for the case $p1 = p2$ and $c(1|2) = c(2|1)$.
+
+(b) Identify the classification rule for the case $p_1 = 0.25$ and $c(1|2)$ is half of $c(2|1)$.
+
+(c) Identify the Bayesian rule using $p_1 = 0.6$.
+
+(d) Based on the rules given in part (a), which population will a new data point $(50, 48, 47, 49)$ be classified into? How about using the rules in part (b)? Using the rule in part (c)?
+
+
+## Solution
+
+```{r}
+A = as.matrix(q5df[q5df$Group == "A",1:4])
+B =as.matrix(q5df[q5df$Group =="B",1:4])
+dat = list(A, B)
+```
+
+### Part A
+All the formulation of the classification rule will be in the handwritten notes, however here is the R code for the calculation. 
+```{r}
+xbar = function(matrix){
+  n = dim(matrix)[1]
+  onevec = rep(1,n)
+  xbar = 1/n*t(matrix)%*%onevec
+  return(xbar)
+}
+# Mean Vectors
+xbar1 = xbar(A)
+xbar2 = xbar(B)
+spooled = Spool(dat)
+
+ahat = t(xbar1 - xbar2)%*%solve(spooled)
+
+ybar1 = ahat%*%xbar1
+ybar2 = ahat%*%xbar2
+
+midpoint = 1/2*(ybar1 + ybar2)
+midpoint
+# Hence the classification is -7.062536
+```
+
+### Part B
+Handwritten Notes
+
+### Part C
+Handwritten Notes. 
+
+### Part D.1
+When we have equal cost and prior discriminants:
+```{r}
+newobs = c(50, 48, 47, 49)
+ahat%*%newobs
+```
+
+Since the observation is bigger than the cutoff point, which was -7.062536, we will classify this obs. to population A. 
+
+### Part D.2
+When p1 = 0.25, and c(1|2) is half of c(2|1)
+```{r}
+ahat%*%newobs - midpoint
+```
+Since the cutoff value for this classification is 0.4055, we will also classify this obs. to population A. 
+
+### Part D.3
+Most of this will be shown in the handwritten, however to calculation certain probabilities for the Bayesian rule, we need to use R. This is shown below
+
+```{r}
+#When we use Bayesian Rule
+probA_newob = (2*pi)^(-2)*(det(spooled))^(-1/2)*
+              exp( (-1/2)*t((newobs - xbar1))%*% solve(spooled)%*%(newobs - 
+                                                                     xbar1))
+probA_newob
+probB_newob = (2*pi)^(-2)*(det(spooled))^(-1/2)*
+  exp( (-1/2)*t((newobs - xbar2))%*% solve(spooled)%*%(newobs -                                                         xbar2))
+probB_newob
+A_newob = (0.6*probA_newob)/(0.6*probA_newob + 0.4*probB_newob)
+A_newob
+
+B_newob = (0.4*probB_newob)/(0.6*probA_newob + 0.4*probB_newob)
+B_newob
+```
