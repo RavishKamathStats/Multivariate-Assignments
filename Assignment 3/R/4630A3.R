@@ -4,15 +4,11 @@
 
 # Data sets ----------------------------------------------------------------
 library(xlsx2dfs)
-
-q1df = read.xlsx(file.choose(), sheet = 1)
-q2df = read.xlsx(file.choose(), sheet = 2)
+q1df = read.xlsx("Dataset/MATH4630_a3data.xlsx", sheet = 1)
+q2df = read.xlsx("Dataset/MATH4630_a3data.xlsx", sheet = 2)
 q3df = q2df
-q5df = read.xlsx(file.choose(), sheet = 3)
+q5df = read.xlsx("Dataset/MATH4630_a3data.xlsx", sheet = 3)
 q5df = q5df[,-1]
-
-
-
 # Functions Built ---------------------------------------------------------
 xbar = function(matrix){
   n = dim(matrix)[1]
@@ -59,7 +55,6 @@ spectral = function(matrix){
 }
 
 # Question 1 --------------------------------------------------------------
-
 #Part A
 #Check Notes
 
@@ -71,7 +66,7 @@ Xnew = cbind(onevec,X)
 beta_coef = solve(crossprod(Xnew))%*%crossprod(Xnew, Y)
 
 #OR 
-fit = lm(Y ~ X)
+fit = lm(cbind(y1, y2) ~ x1 + x2, data = q1df)
 summary(fit)
 
 
@@ -80,7 +75,8 @@ Yhat = Xnew%*%beta_coef
 ehat = Y - Yhat
 n = dim(X)[1]
 Sigmahat = 1/n*t(ehat)%*%ehat
-E = n*Sigmahat
+SSE = n*Sigmahat
+SSE
 
 ybar = colMeans(Y)
 n = nrow(Y)
@@ -90,10 +86,22 @@ q = 1
 
 Ybar = matrix(ybar, n ,m, byrow = T)
 SST = crossprod(Y - Ybar)
+SST
 
+WilksLam = det(SSE)/det(SST)
+
+Bartlett = -(n - r - 1 - 1/2*(m - r + q + 1))*log(WilksLam)
+df = m*(r-q)
+1 - pchisq(Bartlett, df)
+
+#p-value is quite small hence we would reject the null hypothesis. Hence,
+#the model is significant. 
 
 
 #Part D
+#Testing if Beta(2) is significant
+#H_0: Beta(2)  or X2 = 0
+
 X1 = Xnew[,1:2]
 Betahat1 = solve(crossprod(X1))%*%crossprod(X1,Y)
 Sigmahat1 = 1/n*crossprod(Y - X1%*%Betahat1)
@@ -101,8 +109,76 @@ Sigmahat1 = 1/n*crossprod(Y - X1%*%Betahat1)
 E = n*Sigmahat
 H = n*(Sigmahat1 - Sigmahat)
 
-Lambda = det(E)/det(E + H)
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X1)
+q = 1
 
+WilksLam = det(E)/det(E + H)
+
+Bartlett = -(n - r - 1 - 1/2*(m - r + q + 1))*log(WilksLam)
+df = m*(r-q)
+1 - pchisq(Bartlett, df)
+
+#P-value is quite large, hence we will not reject our null hypothesis. This 
+#implies that beta_2  or X2 is not significant. 
+
+#Testing if Beta(1) is significant
+#H_0: Beta(1)  or X1 = 0
+
+X2 = cbind(Xnew[,1], Xnew[,3])
+Betahat2 = solve(crossprod(X2))%*%crossprod(X2,Y)
+Sigmahat2 = 1/n*crossprod(Y - X2%*%Betahat2)
+
+E = n*Sigmahat
+H = n*(Sigmahat2 - Sigmahat)
+
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X2)
+q = 1
+
+WilksLam = det(E)/det(E + H)
+
+Bartlett = -(n - r - 1 - 1/2*(m - r + q + 1))*log(WilksLam)
+df = m*(r-q)
+1 - pchisq(Bartlett, df)
+
+#Once again our p-value is quite large, hence we cannot reject our null 
+#hypothesis. This means that our beta(1) is not significant. 
+
+#Part E
+newobs = data.frame(x1 = 192, x2 = 152)
+pred = predict(fit, newobs)
+
+n = nrow(Y)
+m = ncol(Y)
+r = ncol(X)
+table = sqrt( ((m*(n-r-1))/(n-r-m))*qf(0.95, df1 = m, df2 = n-r-m) )
+
+
+x0 = c(1,192, 152)
+
+sd1 = sqrt(t(x0)%*%solve(crossprod(Xnew))%*%x0*Sigmahat[1,1])
+sd2 = sqrt(t(x0)%*%solve(crossprod(Xnew))%*%x0*Sigmahat[2,2])
+sd = c(sd1, sd2)
+
+CR_L = pred - table*sd
+CR_U = pred + table*sd
+CR = cbind(t(CR_L), t(CR_U))
+colnames(CR) = c("Lower", "Upper")
+CR
+
+#Part F
+sd1 = sqrt( (1 + t(x0)%*%solve(crossprod(Xnew))%*%x0)*Sigmahat[1,1] )
+sd2 = sqrt( (1 + t(x0)%*%solve(crossprod(Xnew))%*%x0)*Sigmahat[2,2] )
+sd = c(sd1, sd2)
+
+PR_L = pred - table*sd
+PR_U = pred + table*sd
+PR = cbind(t(PR_L), t(PR_U))
+colnames(PR) = c("Lower", "Upper")
+PR
 
 # Question 2 --------------------------------------------------------------
 #Part A
@@ -125,6 +201,8 @@ var(X)
 #Getting the eigenvalues and vectors
 eig = eigen(S)
 eigvalues = eig$values
+
+eig$vectors
 
 cumeig = rep(0,length(eigvalues))
 j = 0
@@ -283,15 +361,14 @@ df = (p - 1)*(q-1)
 
 1-pchisq(Bartlett, df)
 
-#Testing p_1 and p_2 not equal to 0
-Bartlett = -(n - 1 - 1/2*(p + q + 1))*log((1-canon_cor[2]^2))
+#Testing p_2 not equal to 0
+Bartlett = -(n - 1 - 1/2*(p + q + 1))*log((1-canon_cor[1]^2))
 Bartlett
 
-df = (p - 2)*(q - 2)
+df = (p - 1)*(q - 1)
 
 1-pchisq(Bartlett, df)
 
-#??????
 
 # Question 4 --------------------------------------------------------------
 
@@ -299,25 +376,23 @@ df = (p - 2)*(q - 2)
 curve(expr = (1 - abs(x)), from = -1, to = 1, col = 'green', xlim = c(-1, 2),
       main = "Probability Density Function Graph",
       ylab = 'Density',
-      xlab = 'Values of x')
-curve(expr = 1 - abs(x - 1/2), from = -0.5, to = 1.5, col = 'blue', add = TRUE)
+      xlab = 'Values of x',
+      lty = 1)
+curve(expr = 1 - abs(x - 1/2), from = -0.5, to = 1.5, col = 'blue', add = TRUE,
+      lty = 1)
 
-
-
-abline(h = 0.2)
-abline(v = -1/3)
-
-abline(h = 0.8, lty = 1, col='green')
-abline(v = -1/3)
+legend("bottomright", legend=c("(1 - |x|)","(1 - |x - 0.5|)"),
+       col=c("green", "blue"), lty = 1,
+       title="Line types", text.font=4, bg='white', cex = 0.7)
 
 #Part B.2
 x = seq(-1, 1, 0.01)
-
 density1 = density(1 - abs(x))
-
 x = seq(-0.5, 1.5, 0.01)
-
 density2 = density(1 - abs(x - 1/2))
+
+
+
 
 
 # Question 5 --------------------------------------------------------------
@@ -342,16 +417,14 @@ midpoint
 # Hence the classification is -7.062536
 
 #Part B
-
 cutoff = log(1/2 * (0.75/0.25))
 cutoff
 
 #Part C
-
+#Handwritten Notes
 
 
 #Part D
-
 #When equal cost and prior discriminants
 newobs = c(50, 48, 47, 49)
 ahat%*%newobs
@@ -368,9 +441,19 @@ ahat%*%newobs - midpoint
 
 
 #When we use Bayesian Rule
+probA_newob = (2*pi)^(-2)*(det(spooled))^(-1/2)*
+              exp( (-1/2)*t((newobs - xbar1))%*% solve(spooled)%*%(newobs - 
+                                                                     xbar1))
+probA_newob
 
+probB_newob = (2*pi)^(-2)*(det(spooled))^(-1/2)*
+  exp( (-1/2)*t((newobs - xbar2))%*% solve(spooled)%*%(newobs - 
+                                                         xbar2))
+probB_newob
 
+A_newob = (0.6*probA_newob)/(0.6*probA_newob + 0.4*probB_newob)
+A_newob
 
-
-
+B_newob = (0.4*probB_newob)/(0.6*probA_newob + 0.4*probB_newob)
+B_newob
 
